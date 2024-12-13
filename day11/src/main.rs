@@ -1,9 +1,9 @@
+use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::ops::{Div, Mul, Rem};
 use std::path::Path;
-use std::thread;
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
@@ -27,23 +27,33 @@ fn split(stone: usize) -> (usize, usize) {
     );
 }
 
-fn timetravel(stone: usize, step: usize) -> usize {
+fn timetravel(cache: &mut HashMap<usize, usize>, stone: usize, step: usize) -> usize {
     let len = len(stone);
-    if step == 25 {
-        return 1;
-    } else if stone == 0 {
-        println!("ZERO! step:{},", step);
-        return timetravel(stone + 1, step + 1);
-    } else if len.rem(2) == 0 {
-        let mut count: usize = 0;
-        let pair = split(stone);
-        println!("SPLIT! step: {}, pair: {:?}", step, pair);
-        count += timetravel(pair.0, step + 1);
-        count += timetravel(pair.1, step + 1);
-        return count;
-    } else {
-        println!("MUL! step:{}", step);
-        timetravel(stone.mul(2024), step + 1)
+    match cache.get(&stone) {
+        Some(result) => return *result,
+        None => {
+            if step == 25 {
+                return 1;
+            } else if stone == 0 {
+                println!("ZERO! step:{},", step);
+                let result = timetravel(cache, stone + 1, step + 1);
+                cache.insert(stone, result);
+                return result;
+            } else if len.rem(2) == 0 {
+                let mut result: usize = 0;
+                let pair = split(stone);
+                println!("SPLIT! step: {}, pair: {:?}", step, pair);
+                result += timetravel(cache, pair.0, step + 1);
+                result += timetravel(cache, pair.1, step + 1);
+                cache.insert(stone, result);
+                return result;
+            } else {
+                println!("MUL! step:{}", step);
+                let result = timetravel(cache, stone.mul(2024), step + 1);
+                cache.insert(stone, result);
+                return result;
+            }
+        }
     }
 }
 
@@ -51,6 +61,8 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let filename = &args[1];
     let mut stones: Vec<usize> = Vec::new();
+
+    let mut cache: HashMap<usize, usize> = HashMap::new();
 
     if let Ok(lines) = read_lines(filename) {
         for line in lines.flatten() {
@@ -66,9 +78,9 @@ fn main() {
 
     for stone in stones {
         //println!("Stone: {}", stone);
-        count += timetravel(stone, 0);
+        count += timetravel(&mut cache, stone, 0);
     }
 
-    //println!("{:?}", stones);
+    println!("{:?}", cache);
     println!("P1: {}", count);
 }
