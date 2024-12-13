@@ -27,30 +27,29 @@ fn split(stone: usize) -> (usize, usize) {
     );
 }
 
-fn timetravel(cache: &mut HashMap<usize, usize>, stone: usize, step: usize) -> usize {
+fn timetravel(cache: &mut HashMap<(usize, usize), usize>, stone: usize, step: usize) -> usize {
     let len = len(stone);
-    match cache.get(&stone) {
-        Some(result) => return *result,
+    match cache.get(&(stone, step)) {
+        Some(result) => {
+            return *result;
+        }
         None => {
-            if step == 25 {
+            if step == 101 {
                 return 1;
             } else if stone == 0 {
-                println!("ZERO! step:{},", step);
                 let result = timetravel(cache, stone + 1, step + 1);
-                cache.insert(stone, result);
+                cache.insert((stone, step), result);
                 return result;
             } else if len.rem(2) == 0 {
                 let mut result: usize = 0;
                 let pair = split(stone);
-                println!("SPLIT! step: {}, pair: {:?}", step, pair);
                 result += timetravel(cache, pair.0, step + 1);
                 result += timetravel(cache, pair.1, step + 1);
-                cache.insert(stone, result);
+                cache.insert((stone, step), result);
                 return result;
             } else {
-                println!("MUL! step:{}", step);
                 let result = timetravel(cache, stone.mul(2024), step + 1);
-                cache.insert(stone, result);
+                cache.insert((stone, step), result);
                 return result;
             }
         }
@@ -62,7 +61,7 @@ fn main() {
     let filename = &args[1];
     let mut stones: Vec<usize> = Vec::new();
 
-    let mut cache: HashMap<usize, usize> = HashMap::new();
+    let mut cache: HashMap<(usize, usize), usize> = HashMap::new();
 
     if let Ok(lines) = read_lines(filename) {
         for line in lines.flatten() {
@@ -81,6 +80,6 @@ fn main() {
         count += timetravel(&mut cache, stone, 0);
     }
 
-    println!("{:?}", cache);
+    //println!("{:?}", cache);
     println!("P1: {}", count);
 }
