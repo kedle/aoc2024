@@ -25,35 +25,37 @@ struct Game {
 }
 
 impl Game {
-    fn check_win(&self, na: isize) -> isize {
-        let remx = self.prize.x - (na * self.a.x);
-        let remy = self.prize.y - (na * self.a.y);
+    fn play(&self, part1: bool) -> isize {
+        let a = self.a.x as isize;
+        let b = self.b.x as isize;
+        let c = self.a.y as isize;
+        let d = self.b.y as isize;
+        let x = self.prize.x as isize;
+        let y = self.prize.y as isize;
 
-        if remx % self.b.x == 0 && remy % self.b.y == 0 {
-            let nb_x = remx / self.b.x;
-            let nb_y = remy / self.b.y;
+        let det = a * d - b * c;
+        if det == 0 {
+            return -1;
+        }
 
-            if nb_x == nb_y && nb_x >= 0 && nb_x <= 100 {
-                let cost = 3 * na + nb_x;
-                return cost;
+        let na_num = x * d - b * y;
+        let nb_num = a * y - x * c;
+
+        if na_num % det != 0 || nb_num % det != 0 {
+            return -1;
+        }
+
+        let na = na_num / det;
+        let nb = nb_num / det;
+
+        if part1 {
+            if na < 0 || na > 100 || nb < 0 || nb > 100 {
+                return -1;
             }
         }
-        -1
-    }
 
-    fn play(&self) -> isize {
-        let mut wins: Vec<isize> = Vec::new();
-        for na in 0..=100 {
-            let cost = self.check_win(na);
-            if cost != -1 {
-                wins.push(cost);
-            }
-        }
-
-        match wins.iter().min() {
-            Some(v) => return *v,
-            None => return -1 as isize,
-        }
+        let cost = 3 * na + nb;
+        cost
     }
 }
 
@@ -104,9 +106,22 @@ fn main() {
 
     let p1 = games
         .iter()
-        .map(|game| game.play())
+        .map(|game| game.play(true))
         .filter(|game| *game != -1)
         .fold(0, |sum, game| sum + game);
 
     println!("P1: {}", p1);
+
+    let p2 = games
+        .iter_mut()
+        .map(|game| {
+            game.prize.x += 10000000000000;
+            game.prize.y += 10000000000000;
+            game
+        })
+        .map(|game| game.play(false))
+        .filter(|game| *game != -1)
+        .fold(0, |sum, game| sum + game);
+
+    println!("P2: {:?}", p2);
 }
